@@ -4,6 +4,9 @@ import client.handlers.AsyncConnectionHandler;
 import client.handlers.AsyncReadHandler;
 import client.handlers.AsyncWriteHandler;
 import common.AsyncClientSocket;
+import common.Message;
+import common.MessageConverter;
+import common.ResponseMessage;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -11,9 +14,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Client extends AsyncClientSocket {
+import static java.lang.String.format;
 
-    private final List<String> messages = new ArrayList<>(0);
+public class Client extends AsyncClientSocket {
+    private final List<ResponseMessage> messages = new ArrayList<>(0);
     private final String host;
     private final int port;
 
@@ -27,9 +31,9 @@ public class Client extends AsyncClientSocket {
         channel.connect(new InetSocketAddress(host, port), channel, new AsyncConnectionHandler());
     }
 
-    public void write(String message) {
-        final ByteBuffer buffer = ByteBuffer.allocate(2048);
-        buffer.put(message.getBytes());
+    public void write(Message message) throws IOException {
+        final ByteBuffer buffer = ByteBuffer.allocate(1024);
+        buffer.put(MessageConverter.convertToBytes(message));
         buffer.flip();
         channel.write(buffer, channel, new AsyncWriteHandler());
     }
@@ -39,12 +43,12 @@ public class Client extends AsyncClientSocket {
         channel.read(byteBuffer, byteBuffer, new AsyncReadHandler(this));
     }
 
-    public void addMessage(String message) {
+    public void addMessage(ResponseMessage message) {
         messages.add(message);
-        System.out.println("Message received: " + message);
+        System.out.println(format("ResponseMessage received successfully: {%s} result {%s}", message.Request, message.Data));
     }
 
-    public List<String> getMessages() {
+    public List<ResponseMessage> getMessages() {
         return List.copyOf(messages);
     }
 }

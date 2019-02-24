@@ -1,10 +1,12 @@
 package client.handlers;
 
 import client.Client;
+import common.MessageConverter;
+import common.ResponseMessage;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
-import java.nio.charset.StandardCharsets;
 
 public class AsyncReadHandler implements CompletionHandler<Integer, ByteBuffer> {
     private final Client client;
@@ -13,7 +15,6 @@ public class AsyncReadHandler implements CompletionHandler<Integer, ByteBuffer> 
         this.client = client;
     }
 
-    @SuppressWarnings("Duplicates")
     @Override
     public void completed(Integer result, ByteBuffer attachment) {
         client.startRead();
@@ -21,8 +22,14 @@ public class AsyncReadHandler implements CompletionHandler<Integer, ByteBuffer> 
         attachment.flip();
         byte[] bytes = new byte[attachment.remaining()];
         attachment.get(bytes);
-        String message = new String(bytes, StandardCharsets.UTF_8);
-        client.addMessage(message);
+        try {
+            ResponseMessage message = (ResponseMessage)MessageConverter.convertFromBytes(bytes);
+            client.addMessage(message);
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Failed to read message from server (while converting)!");
+            e.printStackTrace();
+        }
+
     }
 
     @Override

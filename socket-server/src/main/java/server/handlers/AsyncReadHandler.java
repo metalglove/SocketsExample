@@ -1,12 +1,12 @@
 package server.handlers;
 
 import common.AsyncClientSocket;
+import common.UnknownMessageTypeException;
 import server.Server;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
-import java.nio.charset.StandardCharsets;
 
 public class AsyncReadHandler implements CompletionHandler<Integer, ByteBuffer> {
     private final AsyncClientSocket client;
@@ -24,8 +24,12 @@ public class AsyncReadHandler implements CompletionHandler<Integer, ByteBuffer> 
         attachment.flip();
         byte[] bytes = new byte[attachment.remaining()];
         attachment.get(bytes);
-        String message = new String(bytes, StandardCharsets.UTF_8);
-        server.startHandlingMessage(client, message);
+        // message = new String(bytes, StandardCharsets.UTF_8);
+        try {
+            server.startHandlingMessage(client, bytes);
+        } catch (IOException | ClassNotFoundException | UnknownMessageTypeException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
